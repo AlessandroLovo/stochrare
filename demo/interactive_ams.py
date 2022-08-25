@@ -28,7 +28,7 @@ class InteractiveAMS:
           by pressing the left arrow key. This would require keeping in memory all the trajectories
           generated over the iterations of the algorithms.
     """
-    def __init__(self, tams, ntraj, ax):
+    def __init__(self, tams, ntraj, ax, show_killed_levels=True, killed_levels_persist=False, killed_levels_fade_coeff=1):
         self.tams = tams
         self.tams.initialize_ensemble(ntraj, dt=0.01)
         self.ax = ax
@@ -45,6 +45,16 @@ class InteractiveAMS:
         self.killed = np.array([])
         self.survivors = np.array([])
 
+        self.show_killed_levels = show_killed_levels
+        self.killed_levels_persist = killed_levels_persist
+        self.killed_levels_fade_coeff = killed_levels_fade_coeff
+        if not 0 > self.killed_levels_fade_coeff > 1:
+            self.killed_levels_fade_coeff = False
+        else:
+            raise NotImplementedError()
+
+        self.last_kill_level = None
+
     def __call__(self, event):
         if event.key == 'right':
             if self.step == 'selection':
@@ -52,7 +62,8 @@ class InteractiveAMS:
                 for kill_ind in self.killed:
                     self.lines[kill_ind].set_color('C0')
                     self.lines[kill_ind].set_zorder(np.max([line.zorder for line in self.lines])+1)
-                    #self.ax.axhline(y=np.max(self.tams._ensemble[kill_ind][1]), ls='dashed')
+                    if self.show_killed_levels:
+                        self.last_kill_level = self.ax.axhline(y=np.max(self.tams._ensemble[kill_ind][1]), ls='dashed')
                 self.step = 'mutation'
             elif self.step == 'mutation':
                 self.tams.mutationstep(self.killed, self.survivors, dt=0.01)
@@ -68,6 +79,8 @@ class InteractiveAMS:
             elif self.step == 'iter':
                 for kill_ind in self.killed:
                     self.lines[kill_ind].set_color('grey')
+                if not self.killed_levels_persist:
+                    self.ax.lines.remove(self.last_kill_level)
                 self.step = 'selection'
         self.ax.relim()
         self.ax.autoscale_view(True, True, True)
