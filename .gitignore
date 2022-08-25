@@ -4,3 +4,4 @@ dist/
 doc/_build
 doc/generated
 .coverage
+*__pycache__/*
