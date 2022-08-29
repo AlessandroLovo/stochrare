@@ -830,6 +830,7 @@ class OrnsteinUhlenbeck1D(ConstantDiffusionProcess1D):
     def __init__(self, mu, theta, D, **kwargs):
         self._mu = mu
         self._theta = theta
+        self.default_update_method = kwargs.pop('update_method', 'gillespie')
         super(OrnsteinUhlenbeck1D, self).__init__(lambda x, t: theta*(mu-x), D, **kwargs)
 
     @property
@@ -899,10 +900,10 @@ class OrnsteinUhlenbeck1D(ConstantDiffusionProcess1D):
         If necessary, the Euler-Maruyama method can still be chosen using the ``method`` keyword
         argument.
         """
-        if kwargs.pop('method', 'gillespie') == 'gillespie' and self.theta != 0:
+        if kwargs.pop('method', self.default_update_method) == 'gillespie' and self.theta != 0:
             dt = kwargs.get('dt', self.default_dt)
             dw = kwargs.get('dw', np.random.normal(0.0, 1.0))
-            xx = xn*np.exp(-self.theta*dt) \
+            xx = (xn - self.mu)*np.exp(-self.theta*dt) + self.mu \
                  + np.sqrt(self.D0/self.theta*(1-np.exp(-2*self.theta*dt)))*dw
         else:
             xx = ConstantDiffusionProcess1D.update(self, xn, tn, **kwargs)
