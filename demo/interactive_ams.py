@@ -28,14 +28,15 @@ class InteractiveAMS:
           by pressing the left arrow key. This would require keeping in memory all the trajectories
           generated over the iterations of the algorithms.
     """
-    def __init__(self, tams, ntraj, ax, show_killed_levels=True, killed_levels_persist=False, killed_levels_fade_coeff=1):
+    def __init__(self, tams, ntraj, ax, traj_alpha=1, show_killed_levels=True, killed_levels_persist=False, killed_levels_fade_coeff=1):
         self.tams = tams
         self.tams.initialize_ensemble(ntraj, dt=0.01)
         self.ax = ax
         self.lines = []
         self.maxdots = []
+        self.traj_alpha = traj_alpha
         for t, x in self.tams._ensemble:
-            line, = self.ax.plot(t, x, color='grey')
+            line, = self.ax.plot(t, x, color='grey', alpha=self.traj_alpha)
             self.lines += [line]
             self.maxdots += [self.ax.scatter((t[np.argmax(x)], ),
                                              (x[np.argmax(x)], ),
@@ -96,7 +97,7 @@ def main():
     ax.set_xlabel(r'$t$')
     ax.set_ylabel(r'$x$')
     oup = sr.dynamics.diffusion1d.OrnsteinUhlenbeck1D(0, 1, 0.5)
-    _ = InteractiveAMS(sr.rare.ams.TAMS(oup, (lambda t, x: x), 5.), 3, ax)
+    _ = InteractiveAMS(sr.rare.ams.TAMS(model=oup, scorefun=(lambda t, x: x), duration=5.), ntraj=3, ax=ax)
     plt.show()
 
 if __name__ == '__main__':
